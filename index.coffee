@@ -7,10 +7,29 @@ monitors = {}
 
 # Create scrollMonitor after the element has been added to DOM
 addListeners = (el, binding) ->
-
 	# Create and generate a unique id that will be store in a data value on
 	# the element
-	monitor = scrollMonitor.create el, offset binding.value
+	
+	# Create container monitor from defaults
+	# container = document.getElementById(module.exports.defaults.container)
+
+	parent = el
+	containerCls = module.exports.defaults.container
+
+	while parent = parent.parentNode
+		container = parent
+		if parent.classList.contains(containerCls) then break
+
+	# find a closest parent
+	# if el.closest('main')
+	# 	container = el.closest(".main")
+
+	# console.log module.exports.defaults.self
+	containerMonitor = scrollMonitor.createContainer(container)
+
+	# monitor = scrollMonitor.create el, offset binding.value
+	monitor = containerMonitor.create el, offset binding.value
+
 	id = 'i' + counter++
 	el.setAttribute 'data-in-viewport', id
 	monitors[id] = monitor
@@ -73,9 +92,11 @@ module.exports =
 	defaults:
 		top: 0
 		bottom: 0
+		container: document.body
 
 	# Init
-	inserted: (el, binding) -> addListeners el, binding
+	inserted: (el, binding) -> 
+		addListeners el, binding
 
 	# If the value changed, re-init scrollbar since scrollMonitor doesn't provide
 	# an API to upadte the offsets.  Doing JSON.stringify to conpare as a quick

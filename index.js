@@ -52,7 +52,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var addListeners, counter, isNumeric, monitors, objIsSame, offset, removeListeners, scrollMonitor, update;
 
@@ -63,8 +63,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	monitors = {};
 
 	addListeners = function(el, binding) {
-	  var id, monitor;
-	  monitor = scrollMonitor.create(el, offset(binding.value));
+	  var container, containerMonitor, id, monitor, parent;
+	  parent = el;
+	  while (parent = parent.parentNode) {
+	    container = parent;
+	    if (parent.classList.contains('main')) {
+	      break;
+	    }
+	  }
+	  containerMonitor = scrollMonitor.createContainer(container);
+	  monitor = containerMonitor.create(el, offset(binding.value));
 	  id = 'i' + counter++;
 	  el.setAttribute('data-in-viewport', id);
 	  monitors[id] = monitor;
@@ -134,7 +142,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = {
 	  defaults: {
 	    top: 0,
-	    bottom: 0
+	    bottom: 0,
+	    container: document.body
 	  },
 	  inserted: function(el, binding) {
 	    return addListeners(el, binding);
@@ -152,13 +161,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
 
-/***/ }
+/***/ })
 /******/ ])
 });
 ;
