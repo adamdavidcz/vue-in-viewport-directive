@@ -54,7 +54,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var addListeners, counter, isNumeric, monitors, objIsSame, offset, removeListeners, scrollMonitor, update;
+	var addListeners, counter, isNumeric, monitors, objIsSame, offset, prevEl, removeListeners, scrollMonitor, update;
 
 	scrollMonitor = __webpack_require__(1);
 
@@ -62,12 +62,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	monitors = {};
 
+	prevEl = null;
+
 	addListeners = function(el, binding) {
-	  var container, containerMonitor, id, monitor, parent;
+	  var container, containerCls, containerMonitor, id, monitor, parent;
 	  parent = el;
+	  containerCls = module.exports.defaults.container;
 	  while (parent = parent.parentNode) {
 	    container = parent;
-	    if (parent.classList.contains('main')) {
+	    if (parent.classList.contains(containerCls)) {
 	      break;
 	    }
 	  }
@@ -77,9 +80,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  el.setAttribute('data-in-viewport', id);
 	  monitors[id] = monitor;
 	  monitor.on('stateChange', function() {
-	    return update(el, monitor, binding.modifiers);
+	    return update(el, monitor, binding.modifiers, binding);
 	  });
-	  return update(el, monitor, binding.modifiers);
+	  return update(el, monitor, binding.modifiers, binding);
 	};
 
 	offset = function(value) {
@@ -100,8 +103,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return !isNaN(parseFloat(n)) && isFinite(n);
 	};
 
-	update = function(el, monitor, modifiers) {
-	  var add, remove, toggle;
+	update = function(el, monitor, modifiers, binding) {
+	  var add, direction, remove, toggle;
 	  add = [];
 	  remove = [];
 	  toggle = function(bool, klass) {
@@ -115,6 +118,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  toggle(monitor.isFullyInViewport, 'fully-in-viewport');
 	  toggle(monitor.isAboveViewport, 'above-viewport');
 	  toggle(monitor.isBelowViewport, 'below-viewport');
+	  if (prevEl !== null && prevEl.offsetTop > el.offsetTop) {
+	    direction = 'up';
+	  } else if (prevEl !== null && prevEl.offsetTop < el.offsetTop) {
+	    direction = 'down';
+	  }
+	  if (monitor.isFullyInViewport && prevEl !== el) {
+	    prevEl = el;
+	    binding.value.call(null, true, direction);
+	  }
 	  if (add.length) {
 	    el.classList.add.apply(el.classList, add);
 	  }
@@ -146,14 +158,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    container: document.body
 	  },
 	  inserted: function(el, binding) {
-	    return addListeners(el, binding);
+	    return addListeners(el, binding, false);
 	  },
 	  componentUpdated: function(el, binding) {
 	    if (objIsSame(binding.value, binding.oldValue)) {
 	      return;
 	    }
 	    removeListeners(el);
-	    return addListeners(el, binding);
+	    return addListeners(el, binding, true);
 	  },
 	  unbind: function(el) {
 	    return removeListeners(el);
