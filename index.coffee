@@ -4,6 +4,7 @@ scrollMonitor = require 'scrollmonitor'
 # A dictionary for storing data per-element
 counter = 0
 monitors = {}
+prevEl = null
 
 # Create scrollMonitor after the element has been added to DOM
 addListeners = (el, binding) ->
@@ -35,10 +36,10 @@ addListeners = (el, binding) ->
 	monitors[id] = monitor
 
 	# Start listenting for changes
-	monitor.on 'stateChange', -> update el, monitor, binding.modifiers
+	monitor.on 'stateChange', -> update el, monitor, binding.modifiers, binding
 
 	# Update intiial state, which also handles `once` prop
-	update el, monitor, binding.modifiers
+	update el, monitor, binding.modifiers, binding
 
 # Parse the binding value into scrollMonitor offsets
 offset = (value) ->
@@ -52,7 +53,7 @@ offset = (value) ->
 isNumeric = (n) -> !isNaN(parseFloat(n)) && isFinite(n)
 
 # Update element classes based on current scrollMonitor state
-update = (el, monitor, modifiers) ->
+update = (el, monitor, modifiers, binding) ->
 
 	# Init vars
 	add = [] # Classes to add
@@ -66,6 +67,16 @@ update = (el, monitor, modifiers) ->
 	toggle monitor.isFullyInViewport, 'fully-in-viewport'
 	toggle monitor.isAboveViewport, 'above-viewport'
 	toggle monitor.isBelowViewport, 'below-viewport'
+
+
+	if prevEl != null && prevEl.offsetTop > el.offsetTop
+		direction = 'up'
+	else if prevEl != null && prevEl.offsetTop < el.offsetTop
+		direction = 'down'
+
+	if monitor.isFullyInViewport && prevEl != el
+		prevEl = el
+		binding.value.call(null, true, direction)
 
 	# Apply classes to element
 	el.classList.add.apply el.classList, add if add.length
@@ -96,7 +107,7 @@ module.exports =
 
 	# Init
 	inserted: (el, binding) -> 
-		addListeners el, binding
+		addListeners el, binding, false
 
 	# If the value changed, re-init scrollbar since scrollMonitor doesn't provide
 	# an API to upadte the offsets.  Doing JSON.stringify to conpare as a quick
@@ -104,7 +115,7 @@ module.exports =
 	componentUpdated: (el, binding) ->
 		return if objIsSame binding.value, binding.oldValue
 		removeListeners el
-		addListeners el, binding
+		addListeners el, binding, true
 
 	# Cleanup
 	unbind: (el) -> removeListeners el
