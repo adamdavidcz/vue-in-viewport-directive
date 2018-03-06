@@ -74,7 +74,7 @@ update = (el, monitor, modifiers, binding) ->
 	else if prevEl != null && prevEl.offsetTop < el.offsetTop
 		direction = 'down'
 
-	if monitor.isFullyInViewport && prevEl != el
+	if monitor.isFullyInViewport && prevEl != el && typeof binding.value == 'function'
 		prevEl = el
 		binding.value.call(null, true, direction)
 
