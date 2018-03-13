@@ -54,7 +54,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var addListeners, counter, isNumeric, monitors, objIsSame, offset, prevEl, removeListeners, scrollMonitor, update;
+	var addListeners, callBinding, counter, isNumeric, monitors, objIsSame, offset, prevEl, removeListeners, scrollMonitor, update;
 
 	scrollMonitor = __webpack_require__(1);
 
@@ -80,8 +80,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  el.setAttribute('data-in-viewport', id);
 	  monitors[id] = monitor;
 	  monitor.on('stateChange', function() {
-	    return update(el, monitor, binding.modifiers, binding);
-	  });
+	    return update(el, monitor, binding.modifiers);
+	  }, monitor.on('visibilityChange', function() {
+	    return callBinding(el, monitor, binding);
+	  }));
 	  return update(el, monitor, binding.modifiers, binding);
 	};
 
@@ -103,8 +105,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return !isNaN(parseFloat(n)) && isFinite(n);
 	};
 
-	update = function(el, monitor, modifiers, binding) {
-	  var add, direction, remove, toggle;
+	callBinding = function(el, monitor, binding) {
+	  var direction;
+	  if (monitor.isBelowViewport && monitor.isInViewport) {
+	    direction = 'down';
+	  } else if (monitor.isBelowViewport && !monitor.isInViewport) {
+	    direction = 'up';
+	  }
+	  if (typeof binding.value === 'function' && (monitor.isBelowViewport && monitor.isInViewport || monitor.isBelowViewport && !monitor.isInViewport)) {
+	    return binding.value.call(null, true, direction);
+	  }
+	};
+
+	update = function(el, monitor, modifiers) {
+	  var add, remove, toggle;
 	  add = [];
 	  remove = [];
 	  toggle = function(bool, klass) {
@@ -118,15 +132,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  toggle(monitor.isFullyInViewport, 'fully-in-viewport');
 	  toggle(monitor.isAboveViewport, 'above-viewport');
 	  toggle(monitor.isBelowViewport, 'below-viewport');
-	  if (prevEl !== null && prevEl.offsetTop > el.offsetTop) {
-	    direction = 'up';
-	  } else if (prevEl !== null && prevEl.offsetTop < el.offsetTop) {
-	    direction = 'down';
-	  }
-	  if (monitor.isFullyInViewport && prevEl !== el && typeof binding.value === 'function') {
-	    prevEl = el;
-	    binding.value.call(null, true, direction);
-	  }
 	  if (add.length) {
 	    el.classList.add.apply(el.classList, add);
 	  }

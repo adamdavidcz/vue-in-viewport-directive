@@ -36,13 +36,16 @@ addListeners = (el, binding) ->
 	monitors[id] = monitor
 
 	# Start listenting for changes
-	monitor.on 'stateChange', -> update el, monitor, binding.modifiers, binding
+	monitor.on 'stateChange', -> update el, monitor, binding.modifiers,
+
+	monitor.on 'visibilityChange', -> callBinding el, monitor, binding
 
 	# Update intiial state, which also handles `once` prop
 	update el, monitor, binding.modifiers, binding
 
 # Parse the binding value into scrollMonitor offsets
 offset = (value) ->
+	
 	if isNumeric value
 	then return { top: value, bottom: value }
 	else
@@ -52,8 +55,18 @@ offset = (value) ->
 # Test if var is a number
 isNumeric = (n) -> !isNaN(parseFloat(n)) && isFinite(n)
 
+callBinding = (el, monitor, binding) ->
+
+	if monitor.isBelowViewport && monitor.isInViewport
+		direction = 'down'
+	else if monitor.isBelowViewport && !monitor.isInViewport
+		direction = 'up'
+
+	if typeof binding.value =='function' && (monitor.isBelowViewport && monitor.isInViewport || monitor.isBelowViewport && !monitor.isInViewport)
+		binding.value.call(null, true, direction)
+
 # Update element classes based on current scrollMonitor state
-update = (el, monitor, modifiers, binding) ->
+update = (el, monitor, modifiers) ->
 
 	# Init vars
 	add = [] # Classes to add
@@ -67,16 +80,6 @@ update = (el, monitor, modifiers, binding) ->
 	toggle monitor.isFullyInViewport, 'fully-in-viewport'
 	toggle monitor.isAboveViewport, 'above-viewport'
 	toggle monitor.isBelowViewport, 'below-viewport'
-
-
-	if prevEl != null && prevEl.offsetTop > el.offsetTop
-		direction = 'up'
-	else if prevEl != null && prevEl.offsetTop < el.offsetTop
-		direction = 'down'
-
-	if monitor.isFullyInViewport && prevEl != el && typeof binding.value == 'function'
-		prevEl = el
-		binding.value.call(null, true, direction)
 
 	# Apply classes to element
 	el.classList.add.apply el.classList, add if add.length
